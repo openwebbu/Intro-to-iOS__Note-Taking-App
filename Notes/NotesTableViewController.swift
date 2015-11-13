@@ -147,6 +147,7 @@ class NotesTableViewController: UITableViewController {
         
         if notes.count == 0 {
             tableView.backgroundView = UIImageView(image: UIImage(named: "EmptyTable"))
+            tableView.backgroundView?.contentMode = .Center
             tableView.separatorStyle = UITableViewCellSeparatorStyle.None
         } else {
             tableView.backgroundView = nil
