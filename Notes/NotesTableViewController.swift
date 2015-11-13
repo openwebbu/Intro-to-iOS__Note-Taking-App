@@ -8,124 +8,162 @@
 
 import UIKit
 
+
+// Views
 var masterView:NotesTableViewController?
 var detailViewController:NoteViewController?
 
-var Objects:[String] = [String]()
-var selectedIndex = 0
-let BLANK_NOTE = "New Note"
+// Data
+var notes = [String]()
+var currentIndex = 0
 
-var kNotes = "notes"
+// Constants
+let kNotes = "notes"
+
+
 
 class NotesTableViewController: UITableViewController {
     
-    @IBAction func newNoteButton(sender: AnyObject) {
-        Objects.insert(BLANK_NOTE, atIndex: 0)
-        setBackground()
-        save()
-        self.tableView.reloadData()
-        selectedIndex = 0
-        self.performSegueWithIdentifier("showNote", sender: self)
-    }
-
+    
+    // MARK: - Initialization
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Add table footer to hide empty cells
         tableView.tableFooterView = UIView.init(frame: CGRectZero)
-
-        load()
+        
+        // Load data from user defaults and set the background
+        loadData()
         setBackground()
-        
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-        
-        
     }
     
     override func viewWillAppear(animated: Bool) {
-        
+        // Every time view is about to appear - reload table data
         tableView.reloadData()
+    }
+    
+    override func viewDidAppear(animated: Bool) {
         
-        if selectedIndex > Objects.count - 1 {
-            selectedIndex = 0
+        // Check is curentIndex is invalid
+        if (currentIndex > notes.count - 1) {
+            currentIndex = 0
         }
         
-        if Objects.count != 0 && (Objects[selectedIndex] == BLANK_NOTE || Objects[selectedIndex] == "") {
-            Objects.removeAtIndex(selectedIndex)
-            save()
-            self.tableView.deleteRowsAtIndexPaths([NSIndexPath(forRow: selectedIndex, inSection: 0)], withRowAnimation: UITableViewRowAnimation.Automatic)
+        // If curent note is empty, remove it
+        if (notes.count != 0 && notes[currentIndex] == "") {
+            removeRowAtIndexPath(NSIndexPath(forRow: currentIndex, inSection: 0))
         }
         
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    
+    
+    
+    // MARK: - Actions
+    
+    @IBAction func newNoteButton(sender: AnyObject) {
+        
+        // Add new empty note
+        notes.insert("", atIndex: 0)
+        
+        // Check if background should be updates
+        setBackground()
+        
+        // Reload table and show new note
+        self.tableView.reloadData()
+        
+        // Set selected note and trigger the segue
+        currentIndex = 0
+        self.performSegueWithIdentifier("showNote", sender: self)
     }
+    
+    
+    
+    // MARK: - Table View Delegate
+    
+    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        
+        // What happens when you user deletes a row
+        if editingStyle == .Delete {
+            removeRowAtIndexPath(indexPath)
+        }
+    }
+    
 
-    // MARK: - Table view data source
+    
+    // MARK: - Table View Data Source
 
     override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
+        // We have only 1 section in Table View
         return 1
     }
 
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
-        return Objects.count
+        // Number of rows equals to number of string in our notes array
+        return notes.count
     }
 
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        
         let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
         
-        cell.textLabel!.text = Objects[indexPath.row]
+        // Set label text to be note text
+        cell.textLabel!.text = notes[indexPath.row]
 
         return cell
     }
 
-    // Override to support editing the table view.
-    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if editingStyle == .Delete {
-            Objects.removeAtIndex(indexPath.row)
-            save()
-            setBackground()
-            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Automatic)
-        } else if editingStyle == .Insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
-    }
+    
     
     // MARK: - Segues
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        
+        // Before moving to the note view, set currentIndex to the index of selected note
         if segue.identifier == "showNote" {
             if let indexPath = self.tableView.indexPathForSelectedRow {
-                selectedIndex = indexPath.row
+                currentIndex = indexPath.row
             }
         }
     }
     
+    
+    
     // MARK: - Custom Functions
     
+    // Removes note at a given index path
+    func removeRowAtIndexPath(indexPath: NSIndexPath) {
+        
+        notes.removeAtIndex(indexPath.row)
+        
+        saveData()
+        setBackground()
+        
+        tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Automatic)
+    }
+    
+    // Set background to an image if there're no notes, removes lines between rows
     func setBackground() {
-        if Objects.count == 0 {
+        
+        if notes.count == 0 {
             tableView.backgroundView = UIImageView(image: UIImage(named: "EmptyTable"))
             tableView.separatorStyle = UITableViewCellSeparatorStyle.None
-        }
-        else {
+        } else {
             tableView.backgroundView = nil
             tableView.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
         }
     }
     
-    func save() {
-        NSUserDefaults.standardUserDefaults().setObject(Objects, forKey: kNotes)
+    // Saves notes data to User Defaults (persistent storage)
+    func saveData() {
+        NSUserDefaults.standardUserDefaults().setObject(notes, forKey: kNotes)
         NSUserDefaults.standardUserDefaults().synchronize()
     }
     
-    func load() {
+    // Load data from persistent storage and saves it to a local variable
+    func loadData() {
         if let loadedData = NSUserDefaults.standardUserDefaults().arrayForKey(kNotes) as? [String] {
-            Objects = loadedData
+            notes = loadedData
         }
     }
 

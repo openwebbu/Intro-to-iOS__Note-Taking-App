@@ -10,70 +10,61 @@ import UIKit
 
 class NoteViewController: UIViewController, UITextViewDelegate {
 
+    // Our Text View
     @IBOutlet weak var noteTextView: UITextView!
-    var doneButton:UIBarButtonItem!
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Set title for the screen
         self.navigationItem.title = "Note"
         
-        
-        if Objects[selectedIndex] == BLANK_NOTE {
-            noteTextView.text = ""
-        }
-        else {
-            noteTextView.text = Objects[selectedIndex]
-        }
-        
-        noteTextView.becomeFirstResponder()
+        // Add text of current note to the Text View
+        noteTextView.text = notes[currentIndex]
         noteTextView.delegate = self
         
+        // Start editing
         setStateEdit()
-        
-        // Do any additional setup after loading the view.
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
-    func textViewDidBeginEditing(textView: UITextView) {
-        setStateEdit()
-    }
-    
-    func setStateEdit() {
-        noteTextView.becomeFirstResponder()
-        doneButton = UIBarButtonItem(title: "Done", style: .Plain, target: self, action: Selector("setStateRead"))
-        self.navigationItem.rightBarButtonItem = doneButton
-    }
-    
-    func setStateRead() {
-        noteTextView.resignFirstResponder()
-        self.navigationItem.rightBarButtonItem = nil
-        saveAndUpdate()
-    }
-    
-    func saveAndUpdate() {
-        Objects[selectedIndex] = noteTextView.text
-        masterView?.save()
-        masterView?.tableView.reloadData()
     }
     
     override func viewWillDisappear(animated: Bool) {
         super.viewWillDisappear(animated)
-        saveAndUpdate()
+        saveNoteText()
     }
+    
+    
 
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    func textViewDidBeginEditing(textView: UITextView) {
+        setStateEdit()
     }
-    */
-
+    
+    
+    
+    func setStateEdit() {
+        // Make Text View "active" (set cursor and open keyboard)
+        noteTextView.becomeFirstResponder()
+        
+        // Create done button and add it to the view
+        let doneButton = UIBarButtonItem(title: "Done", style: .Plain, target: self, action: Selector("setStateRead"))
+        self.navigationItem.rightBarButtonItem = doneButton
+    }
+    
+    func setStateRead() {
+        // Close keyboard
+        noteTextView.resignFirstResponder()
+        
+        // Remove done button
+        self.navigationItem.rightBarButtonItem = nil
+        
+        // Save data
+        saveNoteText()
+    }
+    
+    
+    
+    func saveNoteText() {
+        notes[currentIndex] = noteTextView.text
+        masterView?.saveData()
+    }
 }
